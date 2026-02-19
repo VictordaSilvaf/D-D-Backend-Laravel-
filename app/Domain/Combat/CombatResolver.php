@@ -4,21 +4,29 @@ declare(strict_types=1);
 
 namespace App\Domain\Combat;
 
+use App\Domain\Combat\Contracts\DiceRoller;
+use App\Domain\Combat\Enums\ActionType;
+
 final class CombatResolver
 {
+    public function __construct(
+        private readonly DiceRoller $diceRoller
+    ) {}
+
     public function resolve(
         CombatState $state,
-        int $dice,
+        int $playerDice,
         NpcDecision $npcDecision
     ): CombatState {
 
         if ($state->playerAction === ActionType::Attack) {
-            $this->resolvePlayerAttack($state, $dice);
+            $this->resolvePlayerAttack($state, $playerDice);
         }
 
-        if (!$state->enemy->isAlive()) {
+        if (! $state->enemy->isAlive()) {
             $state->addLog('Inimigo derrotado.');
             $state->endCombat();
+
             return $state;
         }
 
@@ -26,7 +34,7 @@ final class CombatResolver
             $this->resolveNpcAttack($state, $npcDecision);
         }
 
-        if (!$state->player->isAlive()) {
+        if (! $state->player->isAlive()) {
             $state->addLog('Jogador derrotado.');
             $state->endCombat();
         }
@@ -43,6 +51,7 @@ final class CombatResolver
             $state->enemy->takeDamage($damage);
 
             $state->addLog("Ataque acertou causando {$damage} de dano.");
+
             return;
         }
 
@@ -53,12 +62,13 @@ final class CombatResolver
         CombatState $state,
         NpcDecision $decision
     ): void {
-        $roll = random_int(1, 20);
+        $roll = $this->diceRoller->roll();
 
         if ($roll >= $state->player->defense) {
             $state->player->takeDamage($decision->damage);
 
             $state->addLog("Inimigo atacou causando {$decision->damage} de dano.");
+
             return;
         }
 

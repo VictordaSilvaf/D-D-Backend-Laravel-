@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "wsl.exe",
+            "args": [
+                "/home/bigode/.config/herd-lite/bin/php",
+                "/home/bigode/projetos/DungeonAndDragons/DungeonAndDragons_Backend/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
