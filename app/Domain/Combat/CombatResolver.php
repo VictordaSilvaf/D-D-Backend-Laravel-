@@ -6,11 +6,13 @@ namespace App\Domain\Combat;
 
 use App\Domain\Combat\Contracts\DiceRoller;
 use App\Domain\Combat\Enums\ActionType;
+use App\Domain\Combat\Resolvers\AttackResolver;
 
 final class CombatResolver
 {
     public function __construct(
-        private readonly DiceRoller $diceRoller
+        private readonly DiceRoller $diceRoller,
+        private readonly AttackResolver $attackResolver
     ) {}
 
     public function resolve(
@@ -20,7 +22,12 @@ final class CombatResolver
     ): CombatState {
 
         if ($state->playerAction === ActionType::Attack) {
-            $this->resolvePlayerAttack($state, $playerDice);
+            $this->attackResolver->resolve(
+                attacker: $state->player,
+                defender: $state->enemy,
+                diceRoll: $playerDice,
+                combatState: $state
+            );
         }
 
         if (! $state->enemy->isAlive()) {
@@ -31,7 +38,15 @@ final class CombatResolver
         }
 
         if ($npcDecision->action === ActionType::Attack) {
-            $this->resolveNpcAttack($state, $npcDecision);
+
+            $npcRoll = $this->diceRoller->roll();
+
+            $this->attackResolver->resolve(
+                attacker: $state->enemy,
+                defender: $state->player,
+                diceRoll: $npcRoll,
+                combatState: $state
+            );
         }
 
         if (! $state->player->isAlive()) {
@@ -40,38 +55,5 @@ final class CombatResolver
         }
 
         return $state;
-    }
-
-    private function resolvePlayerAttack(
-        CombatState $state,
-        int $dice
-    ): void {
-        if ($dice >= $state->enemy->defense) {
-            $damage = $state->player->damage;
-            $state->enemy->takeDamage($damage);
-
-            $state->addLog("Ataque acertou causando {$damage} de dano.");
-
-            return;
-        }
-
-        $state->addLog('Ataque falhou.');
-    }
-
-    private function resolveNpcAttack(
-        CombatState $state,
-        NpcDecision $decision
-    ): void {
-        $roll = $this->diceRoller->roll();
-
-        if ($roll >= $state->player->defense) {
-            $state->player->takeDamage($decision->damage);
-
-            $state->addLog("Inimigo atacou causando {$decision->damage} de dano.");
-
-            return;
-        }
-
-        $state->addLog('Inimigo tentou atacar, mas falhou.');
     }
 }

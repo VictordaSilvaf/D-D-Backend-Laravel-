@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Domain\Combat\Character;
 use App\Domain\Combat\CombatResolver;
-use App\Domain\Combat\CombatState;
 use App\Domain\Combat\Enums\ActionType;
 use App\Domain\Combat\NpcDecision;
+use App\Domain\Combat\Resolvers\AttackResolver;
 use Tests\Support\FakeDiceRoller;
 
 it('player acerta ataque', function () {
@@ -14,7 +13,8 @@ it('player acerta ataque', function () {
     $state = makeState();
 
     $resolver = new CombatResolver(
-        new FakeDiceRoller(1)
+        new FakeDiceRoller(1),
+        new AttackResolver
     );
 
     $npcDecision = new NpcDecision(
@@ -40,7 +40,8 @@ it('encerra combate quando inimigo morre', function () {
     );
 
     $resolver = new CombatResolver(
-        new FakeDiceRoller(1)
+        new FakeDiceRoller(1),
+        new AttackResolver
     );
 
     $npcDecision = new NpcDecision(
@@ -63,7 +64,8 @@ it('npc acerta ataque', function () {
     $state = makeState();
 
     $resolver = new CombatResolver(
-        new FakeDiceRoller(20)
+        new FakeDiceRoller(20),
+        new AttackResolver
     );
 
     $npcDecision = new NpcDecision(
@@ -85,7 +87,8 @@ it('npc erra ataque', function () {
     $state = makeState();
 
     $resolver = new CombatResolver(
-        new FakeDiceRoller(1)
+        new FakeDiceRoller(1),
+        new AttackResolver
     );
 
     $npcDecision = new NpcDecision(
@@ -105,11 +108,13 @@ it('npc erra ataque', function () {
 it('encerra combate quando jogador morre', function () {
 
     $state = makeState(
-        playerHp: 5
+        playerHp: 5,
+        enemyDamage: 10
     );
 
     $resolver = new CombatResolver(
-        new FakeDiceRoller(20)
+        new FakeDiceRoller(20),
+        new AttackResolver
     );
 
     $npcDecision = new NpcDecision(

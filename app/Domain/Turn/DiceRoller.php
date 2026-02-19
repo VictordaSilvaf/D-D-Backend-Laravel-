@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Turn;
 
-final class DiceRoller
+use App\Domain\Turn\Contracts\DiceRoller as DiceRollerContract;
+
+final class DiceRoller implements DiceRollerContract
 {
     public function d20(): int
     {

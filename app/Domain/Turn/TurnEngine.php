@@ -4,101 +4,53 @@ declare(strict_types=1);
 
 namespace App\Domain\Turn;
 
-use App\Ai\Agents\DDMaster;
-use App\Ai\Agents\NPCMind;
-use Laravel\Ai\Responses\AgentResponse;
-use Laravel\Ai\Responses\StructuredAgentResponse;
+use App\Domain\Turn\Contracts\CombatResolver as CombatResolverContract;
+use App\Domain\Turn\Contracts\DiceRoller as DiceRollerContract;
+use App\Domain\Turn\Contracts\NarrationService as NarrationServiceContract;
+use App\Domain\Turn\Contracts\NpcDecisionService as NpcDecisionServiceContract;
 
 final class TurnEngine
 {
     public function __construct(
-        private DiceRoller $diceRoller,
-        private CombatResolver $combatResolver,
+        private DiceRollerContract $diceRoller,
+        private CombatResolverContract $combatResolver,
+        private NpcDecisionServiceContract $npcDecisionService,
+        private NarrationServiceContract $narrationService,
     ) {}
 
     public function process(array $state, string $playerAction): TurnResult
     {
         $dice = $this->diceRoller->d20();
 
-        /*
-         |------------------------------------------------------------
-         | 1. Decisão dos NPCs (Structured Output)
-         |------------------------------------------------------------
-         */
+        $enrichedState = [
+            ...$state,
+            'player_action' => $playerAction,
+        ];
 
-        /** @var StructuredAgentResponse $npcResponse */
-        $npcResponse = NPCMind::make()->prompt(
-            $this->buildNpcPrompt($state, $playerAction, $dice)
+        $npcDecision = $this->npcDecisionService->decide(
+            $enrichedState,
+            $playerAction,
+            $dice
         );
 
-        $npcDecision = $npcResponse->toArray();
-
-        /*
-         |------------------------------------------------------------
-         | 2. Aplicar regras de combate
-         |------------------------------------------------------------
-         */
-
         $updatedState = $this->combatResolver->resolve(
-            state: $state,
+            state: $enrichedState,
             dice: $dice,
             npcDecision: $npcDecision
         );
 
-        /*
-         |------------------------------------------------------------
-         | 3. Gerar narração
-         |------------------------------------------------------------
-         */
-
-        /** @var AgentResponse $narrationResponse */
-        $narrationResponse = DDMaster::make()->prompt(
-            $this->buildNarrationPrompt(
-                $updatedState,
-                $playerAction,
-                $dice,
-                $npcDecision
-            )
+        $narration = $this->narrationService->narrate(
+            $updatedState,
+            $playerAction,
+            $dice,
+            $npcDecision
         );
 
         return new TurnResult(
             dice: $dice,
             updatedState: $updatedState,
-            narration: (string) $narrationResponse,
+            narration: $narration,
             npcDecision: $npcDecision
         );
-    }
-
-    /*
-     |--------------------------------------------------------------------------
-     | Prompt Builders
-     |--------------------------------------------------------------------------
-     | DRY aplicado: separação da construção de prompt
-     */
-
-    private function buildNpcPrompt(
-        array $state,
-        string $playerAction,
-        int $dice
-    ): string {
-        return json_encode([
-            'scene_state' => $state,
-            'player_action' => $playerAction,
-            'dice_result' => $dice,
-        ], JSON_THROW_ON_ERROR);
-    }
-
-    private function buildNarrationPrompt(
-        array $state,
-        string $playerAction,
-        int $dice,
-        array $npcDecision
-    ): string {
-        return json_encode([
-            'scene_state' => $state,
-            'player_action' => $playerAction,
-            'dice_result' => $dice,
-            'npc_decision' => $npcDecision,
-        ], JSON_THROW_ON_ERROR);
     }
 }

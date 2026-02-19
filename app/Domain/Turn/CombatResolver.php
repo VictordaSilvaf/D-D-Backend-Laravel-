@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Turn;
 
-final class CombatResolver
+use App\Domain\Turn\Contracts\CombatResolver as CombatResolverContract;
+
+final class CombatResolver implements CombatResolverContract
 {
     public function resolve(
         array $state,
@@ -31,9 +33,10 @@ final class CombatResolver
         |--------------------------------------------------------------------------
         */
 
-        if (!$this->isEnemyAlive($state)) {
+        if (! $this->isEnemyAlive($state)) {
             $state['combat_log'][] = 'Inimigo derrotado.';
             $state['combat_ended'] = true;
+
             return $state;
         }
 
@@ -43,7 +46,7 @@ final class CombatResolver
             $state['combat_log'][] = $npcResult['log'];
         }
 
-        if (!$this->isPlayerAlive($state)) {
+        if (! $this->isPlayerAlive($state)) {
             $state['combat_log'][] = 'Jogador derrotado.';
             $state['combat_ended'] = true;
         }
