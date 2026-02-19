@@ -1,5 +1,9 @@
 <?php
 
+use App\Domain\Combat\Character;
+use App\Domain\Combat\CombatState;
+use App\Domain\Combat\Enums\ActionType;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -41,7 +45,23 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
-{
-    // ..
+function makeState(
+    int $playerHp = 30,
+    int $enemyHp = 20,
+    int $playerDamage = 5,
+    int $enemyDamage = 4
+): CombatState {
+    return new CombatState(
+        player: new Character(
+            hp: $playerHp,
+            defense: 10,
+            damage: $playerDamage
+        ),
+        enemy: new Character(
+            hp: $enemyHp,
+            defense: 10,
+            damage: $enemyDamage
+        ),
+        playerAction: ActionType::Attack,
+    );
 }
