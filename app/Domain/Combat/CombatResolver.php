@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Domain\Combat;
 
+use App\Domain\Combat\Contracts\CombatResolver as CombatResolverContract;
 use App\Domain\Combat\Contracts\DiceRoller;
 use App\Domain\Combat\Enums\ActionType;
 use App\Domain\Combat\Resolvers\AttackResolver;
 
-final class CombatResolver
+final class CombatResolver implements CombatResolverContract
 {
     public function __construct(
         private readonly DiceRoller $diceRoller,

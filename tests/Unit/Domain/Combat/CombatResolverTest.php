@@ -8,126 +8,178 @@ use App\Domain\Combat\NpcDecision;
 use App\Domain\Combat\Resolvers\AttackResolver;
 use Tests\Support\FakeDiceRoller;
 
-it('player acerta ataque', function () {
+/**
+ * Orquestração e fim de combate: ordem das fases, early return quando alguém morre.
+ */
+describe('CombatResolver', function () {
 
-    $state = makeState();
+    it('aplica ataque do jogador quando playerAction é Attack e reduz HP do inimigo', function () {
 
-    $resolver = new CombatResolver(
-        new FakeDiceRoller(1),
-        new AttackResolver
-    );
+        $state = makeState();
 
-    $npcDecision = new NpcDecision(
-        action: ActionType::Attack,
-        damage: 4
-    );
+        $resolver = new CombatResolver(
+            new FakeDiceRoller(1),
+            new AttackResolver
+        );
 
-    $result = $resolver->resolve(
-        state: $state,
-        playerDice: 15,
-        npcDecision: $npcDecision
-    );
+        $npcDecision = new NpcDecision(
+            action: ActionType::Attack,
+            damage: 4
+        );
 
-    expect($result->enemy->hp)->toBe(15);
-});
+        $result = $resolver->resolve(
+            state: $state,
+            playerDice: 15,
+            npcDecision: $npcDecision
+        );
 
-it('encerra combate quando inimigo morre', function () {
+        expect($result->enemy->hp)->toBe(15);
+    });
 
-    $state = makeState(
-        playerHp: 30,
-        enemyHp: 10,
-        playerDamage: 50
-    );
+    it('não aplica ataque do jogador quando playerAction não é Attack', function () {
+        $state = makeState();
+        $state->playerAction = ActionType::Defend;
 
-    $resolver = new CombatResolver(
-        new FakeDiceRoller(1),
-        new AttackResolver
-    );
+        $resolver = new CombatResolver(
+            new FakeDiceRoller(1),
+            new AttackResolver
+        );
 
-    $npcDecision = new NpcDecision(
-        action: ActionType::Attack,
-        damage: 4
-    );
+        $npcDecision = new NpcDecision(
+            action: ActionType::Attack,
+            damage: 4
+        );
 
-    $result = $resolver->resolve(
-        state: $state,
-        playerDice: 20,
-        npcDecision: $npcDecision
-    );
+        $result = $resolver->resolve(
+            state: $state,
+            playerDice: 15,
+            npcDecision: $npcDecision
+        );
 
-    expect($result->enemy->isAlive())->toBeFalse()
-        ->and($result->combatEnded)->toBeTrue();
-});
+        expect($result->enemy->hp)->toBe(20);
+    });
 
-it('npc acerta ataque', function () {
+    it('encerra combate quando inimigo morre e não rola NPC', function () {
 
-    $state = makeState();
+        $state = makeState(
+            playerHp: 30,
+            enemyHp: 10,
+            playerDamage: 50
+        );
 
-    $resolver = new CombatResolver(
-        new FakeDiceRoller(20),
-        new AttackResolver
-    );
+        $resolver = new CombatResolver(
+            new FakeDiceRoller(1),
+            new AttackResolver
+        );
 
-    $npcDecision = new NpcDecision(
-        action: ActionType::Attack,
-        damage: 4
-    );
+        $npcDecision = new NpcDecision(
+            action: ActionType::Attack,
+            damage: 4
+        );
 
-    $result = $resolver->resolve(
-        state: $state,
-        playerDice: 1,
-        npcDecision: $npcDecision
-    );
+        $result = $resolver->resolve(
+            state: $state,
+            playerDice: 20,
+            npcDecision: $npcDecision
+        );
 
-    expect($result->player->hp)->toBe(26);
-});
+        expect($result->enemy->isAlive())->toBeFalse()
+            ->and($result->combatEnded)->toBeTrue();
+    });
 
-it('npc erra ataque', function () {
+    it('npc acerta ataque', function () {
 
-    $state = makeState();
+        $state = makeState();
 
-    $resolver = new CombatResolver(
-        new FakeDiceRoller(1),
-        new AttackResolver
-    );
+        $resolver = new CombatResolver(
+            new FakeDiceRoller(20),
+            new AttackResolver
+        );
 
-    $npcDecision = new NpcDecision(
-        action: ActionType::Attack,
-        damage: 4
-    );
+        $npcDecision = new NpcDecision(
+            action: ActionType::Attack,
+            damage: 4
+        );
 
-    $result = $resolver->resolve(
-        state: $state,
-        playerDice: 1,
-        npcDecision: $npcDecision
-    );
+        $result = $resolver->resolve(
+            state: $state,
+            playerDice: 1,
+            npcDecision: $npcDecision
+        );
 
-    expect($result->player->hp)->toBe(30);
-});
+        expect($result->player->hp)->toBe(26);
+    });
 
-it('encerra combate quando jogador morre', function () {
+    it('npc erra ataque', function () {
 
-    $state = makeState(
-        playerHp: 5,
-        enemyDamage: 10
-    );
+        $state = makeState();
 
-    $resolver = new CombatResolver(
-        new FakeDiceRoller(20),
-        new AttackResolver
-    );
+        $resolver = new CombatResolver(
+            new FakeDiceRoller(1),
+            new AttackResolver
+        );
 
-    $npcDecision = new NpcDecision(
-        action: ActionType::Attack,
-        damage: 10
-    );
+        $npcDecision = new NpcDecision(
+            action: ActionType::Attack,
+            damage: 4
+        );
 
-    $result = $resolver->resolve(
-        state: $state,
-        playerDice: 1,
-        npcDecision: $npcDecision
-    );
+        $result = $resolver->resolve(
+            state: $state,
+            playerDice: 1,
+            npcDecision: $npcDecision
+        );
 
-    expect($result->player->isAlive())->toBeFalse()
-        ->and($result->combatEnded)->toBeTrue();
+        expect($result->player->hp)->toBe(30);
+    });
+
+    it('não aplica ataque do NPC quando npcDecision action não é Attack', function () {
+        $state = makeState();
+
+        $resolver = new CombatResolver(
+            new FakeDiceRoller(20),
+            new AttackResolver
+        );
+
+        $npcDecision = new NpcDecision(
+            action: ActionType::Defend,
+            damage: 4
+        );
+
+        $result = $resolver->resolve(
+            state: $state,
+            playerDice: 1,
+            npcDecision: $npcDecision
+        );
+
+        expect($result->player->hp)->toBe(30);
+    });
+
+    it('encerra combate quando jogador morre', function () {
+
+        $state = makeState(
+            playerHp: 5,
+            enemyDamage: 10
+        );
+
+        $resolver = new CombatResolver(
+            new FakeDiceRoller(20),
+            new AttackResolver
+        );
+
+        $npcDecision = new NpcDecision(
+            action: ActionType::Attack,
+            damage: 10
+        );
+
+        $result = $resolver->resolve(
+            state: $state,
+            playerDice: 1,
+            npcDecision: $npcDecision
+        );
+
+        expect($result->player->isAlive())->toBeFalse()
+            ->and($result->combatEnded)->toBeTrue();
+    });
+
 });
