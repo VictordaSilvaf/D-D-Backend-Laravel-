@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Combat;
 
+use App\Domain\Combat\CombatTurnResult;
 use App\Domain\Combat\Contracts\CombatResolver as CombatResolverContract;
 use App\Domain\Combat\Contracts\DiceRoller;
 use App\Domain\Combat\Enums\ActionType;
@@ -20,8 +21,7 @@ final class CombatResolver implements CombatResolverContract
         CombatState $state,
         int $playerDice,
         NpcDecision $npcDecision
-    ): CombatState {
-
+    ): CombatTurnResult {
         if ($state->playerAction === ActionType::Attack) {
             $this->attackResolver->resolve(
                 attacker: $state->player,
@@ -31,13 +31,22 @@ final class CombatResolver implements CombatResolverContract
             );
         }
 
+        if ($state->playerAction === ActionType::Flee) {
+            $state->addLog('Jogador fugiu do combate.');
+            $state->endCombat();
+
+            return new CombatTurnResult($state, null);
+        }
+
         if (! $state->enemy->isAlive()) {
             $state->addLog('Inimigo derrotado.');
             $state->endCombat();
 
-            return $state;
+            return new CombatTurnResult($state, null);
         }
 
+
+        $npcRoll = null;
         if ($npcDecision->action === ActionType::Attack) {
 
             $npcRoll = $this->diceRoller->roll();
@@ -55,6 +64,6 @@ final class CombatResolver implements CombatResolverContract
             $state->endCombat();
         }
 
-        return $state;
+        return new CombatTurnResult($state, $npcRoll);
     }
 }

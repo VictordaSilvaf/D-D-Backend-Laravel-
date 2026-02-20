@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Combat\CombatResolver;
+use App\Domain\Combat\CombatTurnResult;
 use App\Domain\Combat\Enums\ActionType;
 use App\Domain\Combat\NpcDecision;
 use App\Domain\Combat\Resolvers\AttackResolver;
@@ -33,7 +34,7 @@ describe('CombatResolver', function () {
             npcDecision: $npcDecision
         );
 
-        expect($result->enemy->hp)->toBe(15);
+        expect($result->combatState->enemy->hp)->toBe(15);
     });
 
     it('não aplica ataque do jogador quando playerAction não é Attack', function () {
@@ -56,7 +57,7 @@ describe('CombatResolver', function () {
             npcDecision: $npcDecision
         );
 
-        expect($result->enemy->hp)->toBe(20);
+        expect($result->combatState->enemy->hp)->toBe(20);
     });
 
     it('encerra combate quando inimigo morre e não rola NPC', function () {
@@ -83,8 +84,8 @@ describe('CombatResolver', function () {
             npcDecision: $npcDecision
         );
 
-        expect($result->enemy->isAlive())->toBeFalse()
-            ->and($result->combatEnded)->toBeTrue();
+        expect($result->combatState->enemy->isAlive())->toBeFalse()
+            ->and($result->combatState->combatEnded)->toBeTrue();
     });
 
     it('npc acerta ataque', function () {
@@ -107,7 +108,7 @@ describe('CombatResolver', function () {
             npcDecision: $npcDecision
         );
 
-        expect($result->player->hp)->toBe(26);
+        expect($result->combatState->player->hp)->toBe(26);
     });
 
     it('npc erra ataque', function () {
@@ -130,7 +131,7 @@ describe('CombatResolver', function () {
             npcDecision: $npcDecision
         );
 
-        expect($result->player->hp)->toBe(30);
+        expect($result->combatState->player->hp)->toBe(30);
     });
 
     it('não aplica ataque do NPC quando npcDecision action não é Attack', function () {
@@ -152,7 +153,7 @@ describe('CombatResolver', function () {
             npcDecision: $npcDecision
         );
 
-        expect($result->player->hp)->toBe(30);
+        expect($result->combatState->player->hp)->toBe(30);
     });
 
     it('encerra combate quando jogador morre', function () {
@@ -178,8 +179,8 @@ describe('CombatResolver', function () {
             npcDecision: $npcDecision
         );
 
-        expect($result->player->isAlive())->toBeFalse()
-            ->and($result->combatEnded)->toBeTrue();
+        expect($result->combatState->player->isAlive())->toBeFalse()
+            ->and($result->combatState->combatEnded)->toBeTrue();
     });
 
 });

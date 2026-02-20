@@ -26,29 +26,34 @@ final class TurnEngine
             ...$state,
             'player_action' => $playerAction,
         ];
-
         $npcDecision = $this->npcDecisionService->decide(
             $enrichedState,
             $playerAction,
             $dice
         );
 
-        $updatedState = $this->combatResolver->resolve(
+        $resolvedTurn = $this->combatResolver->resolve(
             state: $enrichedState,
             dice: $dice,
             npcDecision: $npcDecision
         );
 
         $narration = $this->narrationService->narrate(
-            $updatedState,
+            $resolvedTurn->state,
             $playerAction,
-            $dice,
+            [
+                'player' => $dice,
+                'npc' => $resolvedTurn->npcRoll,
+            ],
             $npcDecision
         );
 
         return new TurnResult(
-            dice: $dice,
-            updatedState: $updatedState,
+            dice: [
+                'player' => $dice,
+                'npc' => $resolvedTurn->npcRoll,
+            ],
+            updatedState: $resolvedTurn->state,
             narration: $narration,
             npcDecision: $npcDecision
         );

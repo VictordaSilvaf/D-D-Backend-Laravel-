@@ -6,6 +6,7 @@ use App\Domain\Combat\CombatResolver;
 use App\Domain\Combat\Resolvers\AttackResolver;
 use App\Domain\Turn\CombatResolverAdapter;
 use App\Domain\Turn\CombatStateArrayMapper;
+use App\Domain\Turn\TurnCombatResolverResult;
 use Tests\Support\FakeDiceRoller;
 
 beforeEach(function () {
@@ -30,10 +31,10 @@ it('converte array para CombatState, resolve e devolve array com estado atualiza
         npcDecision: ['action' => 'attack', 'damage' => 4]
     );
 
-    expect($result['enemy']['hp'])->toBe(15)
-        ->and($result['player']['hp'])->toBe(30)
-        ->and($result['combat_ended'])->toBeFalse()
-        ->and($result['combat_log'])->toContain('Ataque acertou causando 5 de dano.');
+    expect($result->state['enemy']['hp'])->toBe(15)
+        ->and($result->state['player']['hp'])->toBe(30)
+        ->and($result->state['combat_ended'])->toBeFalse()
+        ->and($result->state['combat_log'])->toContain('Ataque acertou causando 5 de dano.');
 });
 
 it('encerra combate e preenche combat_ended quando inimigo morre', function () {
@@ -49,9 +50,9 @@ it('encerra combate e preenche combat_ended quando inimigo morre', function () {
         npcDecision: ['action' => 'defend']
     );
 
-    expect($result['enemy']['hp'])->toBe(0)
-        ->and($result['combat_ended'])->toBeTrue()
-        ->and($result['combat_log'])->toContain('Inimigo derrotado.');
+    expect($result->state['enemy']['hp'])->toBe(0)
+        ->and($result->state['combat_ended'])->toBeTrue()
+        ->and($result->state['combat_log'])->toContain('Inimigo derrotado.');
 });
 
 it('encerra combate quando jogador morre após ataque do NPC', function () {
@@ -72,7 +73,7 @@ it('encerra combate quando jogador morre após ataque do NPC', function () {
         npcDecision: ['action' => 'attack', 'damage' => 10]
     );
 
-    expect($result['player']['hp'])->toBe(0)
-        ->and($result['combat_ended'])->toBeTrue()
-        ->and($result['combat_log'])->toContain('Jogador derrotado.');
+    expect($result->state['player']['hp'])->toBe(0)
+        ->and($result->state['combat_ended'])->toBeTrue()
+        ->and($result->state['combat_log'])->toContain('Jogador derrotado.');
 });

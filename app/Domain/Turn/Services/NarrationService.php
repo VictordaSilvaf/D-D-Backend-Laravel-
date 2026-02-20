@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Turn\Services;
 
 use App\Ai\Agents\DDMaster;
+use App\Domain\Combat\NpcDecision;
 use App\Domain\Turn\Contracts\NarrationService as NarrationServiceContract;
 use Laravel\Ai\Responses\AgentResponse;
 
@@ -13,8 +14,8 @@ final class NarrationService implements NarrationServiceContract
     public function narrate(
         array $state,
         string $playerAction,
-        int $dice,
-        array $npcDecision
+        array $dice,
+        NpcDecision $npcDecision
     ): string {
 
         /** @var AgentResponse $response */
@@ -22,8 +23,12 @@ final class NarrationService implements NarrationServiceContract
             json_encode([
                 'scene_state' => $state,
                 'player_action' => $playerAction,
-                'dice_result' => $dice,
-                'npc_decision' => $npcDecision,
+                'player_dice_result' => $dice['player'],
+                'npc_dice_result' => $dice['npc'],
+                'npc_decision' => [
+                    'action' => $npcDecision->action->value,
+                    'damage' => $npcDecision->damage,
+                ],
             ], JSON_THROW_ON_ERROR)
         );
 

@@ -88,9 +88,10 @@ final class CombatStateArrayMapper
     }
 
     /**
-     * @param  array<string, mixed>  $npcDecision  Must have 'action' (string); optional 'damage' (int).
+     * @param  NpcDecision  $npcDecision
+     * @return NpcDecision
      */
-    public function npcDecisionFromArray(array $npcDecision): NpcDecision
+    public function npcDecisionFromArray($npcDecision): NpcDecision
     {
         $action = $this->actionTypeFromString((string) ($npcDecision['action'] ?? 'wait'));
         $damage = (int) ($npcDecision['damage'] ?? 0);

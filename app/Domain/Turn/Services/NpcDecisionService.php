@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Turn\Services;
+namespace App\Domain\Turn\Services;  // ajuste o namespace se estiver errado
 
 use App\Ai\Agents\NPCMind;
+use App\Domain\Combat\NpcDecision;
 use App\Domain\Turn\Contracts\NpcDecisionService as NpcDecisionServiceContract;
-use Laravel\Ai\Responses\StructuredAgentResponse;
 
 final class NpcDecisionService implements NpcDecisionServiceContract
 {
@@ -14,9 +14,8 @@ final class NpcDecisionService implements NpcDecisionServiceContract
         array $state,
         string $playerAction,
         int $dice
-    ): array {
+    ): NpcDecision {   // ← mude aqui o tipo de retorno
 
-        /** @var StructuredAgentResponse $response */
         $response = NPCMind::make()->prompt(
             json_encode([
                 'scene_state' => $state,
@@ -24,7 +23,8 @@ final class NpcDecisionService implements NpcDecisionServiceContract
                 'dice_result' => $dice,
             ], JSON_THROW_ON_ERROR)
         );
+        $raw = $response->toArray();
 
-        return $response->toArray();
+        return NpcDecision::fromAgentResponse($raw);
     }
 }

@@ -6,6 +6,7 @@ use App\Domain\Turn\Contracts\CombatResolver as CombatResolverContract;
 use App\Domain\Turn\Contracts\DiceRoller as DiceRollerContract;
 use App\Domain\Turn\Contracts\NarrationService as NarrationServiceContract;
 use App\Domain\Turn\Contracts\NpcDecisionService as NpcDecisionServiceContract;
+use App\Domain\Turn\TurnCombatResolverResult;
 use App\Domain\Turn\TurnEngine;
 use App\Domain\Turn\TurnResult;
 
@@ -18,7 +19,13 @@ it('processa um turno corretamente', function () {
 
     $playerAction = 'attack';
 
-    $dice = 18;
+    $playerDice = 18;
+    $npcDice = 10;
+
+    $diceRolls = [
+        'player' => $playerDice,
+        'npc' => $npcDice,
+    ];
 
     $npcDecision = [
         'action' => 'defend',
@@ -51,19 +58,22 @@ it('processa um turno corretamente', function () {
     $diceRoller
         ->shouldReceive('d20')
         ->once()
-        ->andReturn($dice);
+        ->andReturn($playerDice);
 
     $npcDecisionService
         ->shouldReceive('decide')
         ->once()
-        ->with($enrichedState, $playerAction, $dice)
+        ->with($enrichedState, $playerAction, $playerDice)
         ->andReturn($npcDecision);
 
     $combatResolver
         ->shouldReceive('resolve')
         ->once()
-        ->with($enrichedState, $dice, $npcDecision)
-        ->andReturn($updatedState);
+        ->with($enrichedState, $playerDice, $npcDecision)
+        ->andReturn(new TurnCombatResolverResult(
+            state: $updatedState,
+            npcRoll: $npcDice,
+        ));
 
     $narrationService
         ->shouldReceive('narrate')
@@ -71,7 +81,7 @@ it('processa um turno corretamente', function () {
         ->with(
             $updatedState,
             $playerAction,
-            $dice,
+            $diceRolls,
             $npcDecision
         )
         ->andReturn($narration);
@@ -100,7 +110,7 @@ it('processa um turno corretamente', function () {
     expect($result)
         ->toBeInstanceOf(TurnResult::class);
 
-    expect($result->dice)->toBe($dice);
+    expect($result->dice)->toBe($diceRolls);
     expect($result->updatedState)->toBe($updatedState);
     expect($result->narration)->toBe($narration);
     expect($result->npcDecision)->toBe($npcDecision);

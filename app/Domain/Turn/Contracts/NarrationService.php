@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domain\Turn\Contracts;
 
+use App\Domain\Combat\NpcDecision;
+
 interface NarrationService
 {
     /**
      * @param  array<string, mixed>  $state
-     * @param  array<string, mixed>  $npcDecision
+     * @param  NpcDecision  $npcDecision
      */
-    public function narrate(array $state, string $playerAction, int $dice, array $npcDecision): string;
+    public function narrate(array $state, string $playerAction, array $dice, NpcDecision $npcDecision): string;
 }
