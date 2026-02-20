@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 use App\Domain\Combat\CombatResolver;
+use App\Domain\Combat\Enums\ActionType;
+use App\Domain\Combat\NpcDecision;
 use App\Domain\Combat\Resolvers\AttackResolver;
 use App\Domain\Turn\CombatResolverAdapter;
 use App\Domain\Turn\CombatStateArrayMapper;
-use App\Domain\Turn\TurnCombatResolverResult;
 use Tests\Support\FakeDiceRoller;
 
 beforeEach(function () {
@@ -28,7 +29,7 @@ it('converte array para CombatState, resolve e devolve array com estado atualiza
     $result = $this->adapter->resolve(
         state: $state,
         dice: 15,
-        npcDecision: ['action' => 'attack', 'damage' => 4]
+        npcDecision: new NpcDecision(action: ActionType::Attack, damage: 4)
     );
 
     expect($result->state['enemy']['hp'])->toBe(15)
@@ -47,7 +48,7 @@ it('encerra combate e preenche combat_ended quando inimigo morre', function () {
     $result = $this->adapter->resolve(
         state: $state,
         dice: 20,
-        npcDecision: ['action' => 'defend']
+        npcDecision: new NpcDecision(action: ActionType::Defend)
     );
 
     expect($result->state['enemy']['hp'])->toBe(0)
@@ -70,7 +71,7 @@ it('encerra combate quando jogador morre após ataque do NPC', function () {
     $result = $adapter->resolve(
         state: $state,
         dice: 1,
-        npcDecision: ['action' => 'attack', 'damage' => 10]
+        npcDecision: new NpcDecision(action: ActionType::Attack, damage: 10)
     );
 
     expect($result->state['player']['hp'])->toBe(0)

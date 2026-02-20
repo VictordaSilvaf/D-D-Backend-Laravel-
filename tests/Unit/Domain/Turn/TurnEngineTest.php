@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domain\Combat\Enums\ActionType;
+use App\Domain\Combat\NpcDecision;
 use App\Domain\Turn\Contracts\CombatResolver as CombatResolverContract;
 use App\Domain\Turn\Contracts\DiceRoller as DiceRollerContract;
 use App\Domain\Turn\Contracts\NarrationService as NarrationServiceContract;
@@ -27,9 +29,7 @@ it('processa um turno corretamente', function () {
         'npc' => $npcDice,
     ];
 
-    $npcDecision = [
-        'action' => 'defend',
-    ];
+    $npcDecision = new NpcDecision(action: ActionType::Defend);
 
     $updatedState = [
         'player_hp' => 100,
