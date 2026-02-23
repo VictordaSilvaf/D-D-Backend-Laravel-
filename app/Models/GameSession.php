@@ -19,6 +19,7 @@ class GameSession extends Model
      */
     protected $fillable = [
         'user_id',
+        'character_sheet_id',
         'state',
         'combat_ended',
     ];
@@ -42,5 +43,13 @@ class GameSession extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the character sheet used for this session (optional).
+     */
+    public function characterSheet(): BelongsTo
+    {
+        return $this->belongsTo(CharacterSheet::class);
     }
 }

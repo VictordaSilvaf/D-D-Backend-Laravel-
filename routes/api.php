@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CharacterSheetController;
 use App\Http\Controllers\Api\V1\GameSessionController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\TurnController;
@@ -24,6 +25,18 @@ Route::prefix('v1')->group(function (): void {
 
         // Health check
         Route::get('/health', [HealthController::class, 'index']);
+
+        // Character Sheets (wizard + import)
+        Route::prefix('character-sheets')->group(function (): void {
+            Route::get('/', [CharacterSheetController::class, 'index']);
+            Route::post('/', [CharacterSheetController::class, 'store']);
+            Route::post('/import-pdf', [CharacterSheetController::class, 'importPdf']);
+            Route::get('/{characterSheet}', [CharacterSheetController::class, 'show']);
+            Route::put('/{characterSheet}', [CharacterSheetController::class, 'update']);
+            Route::patch('/{characterSheet}/step/{step}', [CharacterSheetController::class, 'updateStep']);
+            Route::post('/{characterSheet}/complete', [CharacterSheetController::class, 'complete']);
+            Route::delete('/{characterSheet}', [CharacterSheetController::class, 'destroy']);
+        });
 
         // Game Sessions
         Route::prefix('game-sessions')->group(function (): void {

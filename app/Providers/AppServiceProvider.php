@@ -15,7 +15,9 @@ use App\Domain\Turn\Contracts\NpcDecisionService as NpcDecisionServiceContract;
 use App\Domain\Turn\DiceRoller as TurnDiceRoller;
 use App\Domain\Turn\Services\NarrationService;
 use App\Domain\Turn\Services\NpcDecisionService;
+use App\Models\CharacterSheet;
 use App\Models\GameSession;
+use App\Policies\CharacterSheetPolicy;
 use App\Policies\GameSessionPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -42,5 +44,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(GameSession::class, GameSessionPolicy::class);
+        Gate::policy(CharacterSheet::class, CharacterSheetPolicy::class);
     }
 }

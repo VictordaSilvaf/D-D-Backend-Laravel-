@@ -7,6 +7,7 @@ namespace App\Application\Services;
 use App\Domain\Turn\CombatStateArrayMapper;
 use App\Domain\Turn\TurnEngine;
 use App\Domain\Turn\TurnResult;
+use App\Models\CharacterSheet;
 use App\Models\GameSession;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
@@ -19,18 +20,28 @@ final class GameSessionService
     ) {}
 
     /**
-     * Create a new game session with initial combat state
+     * Create a new game session with initial combat state.
+     * If character_sheet_id is provided and belongs to user, player stats are taken from the sheet.
      *
      * @param  array<string, mixed>  $enemyStats
      */
-    public function createSession(int $userId, array $enemyStats): GameSession
+    public function createSession(int $userId, array $enemyStats, ?int $characterSheetId = null): GameSession
     {
+        $playerStats = [
+            'hp' => 30,
+            'defense' => 10,
+            'damage' => 5,
+        ];
+
+        if ($characterSheetId !== null) {
+            $sheet = CharacterSheet::where('user_id', $userId)->where('id', $characterSheetId)->first();
+            if ($sheet instanceof CharacterSheet) {
+                $playerStats = $sheet->toCombatPlayerState();
+            }
+        }
+
         $initialState = [
-            'player' => [
-                'hp' => 30,
-                'defense' => 10,
-                'damage' => 5,
-            ],
+            'player' => $playerStats,
             'enemy' => $enemyStats,
             'player_action' => 'wait',
             'combat_log' => [],
@@ -39,11 +50,13 @@ final class GameSessionService
 
         Log::info('Game session created', [
             'user_id' => $userId,
+            'character_sheet_id' => $characterSheetId,
             'initial_state' => $initialState,
         ]);
 
         return GameSession::create([
             'user_id' => $userId,
+            'character_sheet_id' => $characterSheetId,
             'state' => $initialState,
             'combat_ended' => false,
         ]);

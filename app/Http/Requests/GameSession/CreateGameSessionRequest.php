@@ -20,6 +20,7 @@ class CreateGameSessionRequest extends ApiRequest
             'enemy.hp' => ['required', 'integer', 'min:1', 'max:1000'],
             'enemy.defense' => ['required', 'integer', 'min:1', 'max:30'],
             'enemy.damage' => ['required', 'integer', 'min:1', 'max:100'],
+            'character_sheet_id' => ['nullable', 'integer', 'exists:character_sheets,id'],
         ];
     }
 
@@ -35,6 +36,7 @@ class CreateGameSessionRequest extends ApiRequest
             'enemy.hp' => 'HP do inimigo',
             'enemy.defense' => 'defesa do inimigo',
             'enemy.damage' => 'dano do inimigo',
+            'character_sheet_id' => 'ficha de personagem',
         ];
     }
 }

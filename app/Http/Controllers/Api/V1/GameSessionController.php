@@ -8,6 +8,7 @@ use App\Application\Services\GameSessionService;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\GameSession\CreateGameSessionRequest;
 use App\Http\Responses\ApiResponse;
+use App\Models\CharacterSheet;
 use App\Models\GameSession;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
@@ -38,6 +39,13 @@ class GameSessionController extends Controller
                             new OA\Property(property: 'damage', type: 'integer', example: 10, description: 'Dano do inimigo (1-100)'),
                         ],
                         type: 'object'
+                    ),
+                    new OA\Property(
+                        property: 'character_sheet_id',
+                        type: 'integer',
+                        nullable: true,
+                        example: 1,
+                        description: 'ID da ficha de personagem (opcional). Se informado, o estado inicial do jogador será baseado na ficha.'
                     ),
                 ]
             )
@@ -151,9 +159,17 @@ class GameSessionController extends Controller
     {
         $validated = $request->validated();
 
+        if (isset($validated['character_sheet_id'])) {
+            $sheet = CharacterSheet::find($validated['character_sheet_id']);
+            if ($sheet !== null) {
+                $this->authorize('view', $sheet);
+            }
+        }
+
         $session = $this->gameSessionService->createSession(
             userId: $request->user()->id,
-            enemyStats: $validated['enemy']
+            enemyStats: $validated['enemy'],
+            characterSheetId: isset($validated['character_sheet_id']) ? (int) $validated['character_sheet_id'] : null
         );
 
         return ApiResponse::success(

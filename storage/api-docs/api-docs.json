@@ -351,6 +351,86 @@
                 ]
             }
         },
+        "/auth/logout-all": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Realizar logout de todos os dispositivos",
+                "description": "Logout the authenticated user from all devices",
+                "operationId": "0e42e4a7be653e46c3c646336a386fa7",
+                "responses": {
+                    "200": {
+                        "description": "Logout de todos os dispositivos realizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Logout de todos os dispositivos realizado com sucesso."
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autenticado."
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/auth/me": {
             "get": {
                 "tags": [
@@ -444,6 +524,799 @@
                 ]
             }
         },
+        "/character-sheets": {
+            "get": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Listar fichas de personagem do usuário",
+                "description": "List character sheets for the authenticated user.",
+                "operationId": "c988c80a0adbf8bf861144c72aeedb30",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filtrar por status (draft ou completed)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "completed"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de fichas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "user_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "draft"
+                                                    },
+                                                    "state": {
+                                                        "type": "object"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Não autenticado."
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Criar nova ficha de personagem (rascunho)",
+                "description": "Create a new character sheet (draft).",
+                "operationId": "1cf0be3d5d6b02cbd2943e9d89465eff",
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "state": {
+                                        "description": "Estado inicial da ficha (basics, class, abilities, etc.)",
+                                        "properties": {
+                                            "basics": {
+                                                "type": "object"
+                                            },
+                                            "class": {
+                                                "type": "object"
+                                            },
+                                            "abilities": {
+                                                "type": "object"
+                                            },
+                                            "background": {
+                                                "type": "object"
+                                            },
+                                            "combat": {
+                                                "type": "object"
+                                            },
+                                            "equipment": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ficha criada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "draft"
+                                                },
+                                                "state": {
+                                                    "type": "object"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/character-sheets/{id}": {
+            "get": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Obter uma ficha de personagem",
+                "description": "Get a single character sheet.",
+                "operationId": "443c6b650cb7838641b72c48a1b4589b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da ficha",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ficha encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "status": {
+                                                    "type": "string",
+                                                    "example": "draft"
+                                                },
+                                                "state": {
+                                                    "type": "object"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Ficha não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Atualizar ficha de personagem",
+                "description": "Update character sheet (full or partial state).",
+                "operationId": "2eced38851d2c3c87ad4909a198dab82",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da ficha",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "state": {
+                                        "description": "Estado (parcial ou completo). Ficha finalizada não pode ser alterada.",
+                                        "properties": {
+                                            "basics": {
+                                                "type": "object"
+                                            },
+                                            "class": {
+                                                "type": "object"
+                                            },
+                                            "abilities": {
+                                                "type": "object"
+                                            },
+                                            "background": {
+                                                "type": "object"
+                                            },
+                                            "combat": {
+                                                "type": "object"
+                                            },
+                                            "equipment": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Ficha atualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "description": "Ficha atualizada",
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Ficha não encontrada"
+                    },
+                    "422": {
+                        "description": "Ficha já finalizada ou erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Remover ficha de personagem",
+                "description": "Delete a character sheet.",
+                "operationId": "62b4165480e4b148ed88db3efcf5b734",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da ficha",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ficha removida com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "message": {
+                                                    "type": "string",
+                                                    "example": "Ficha removida com sucesso."
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Ficha não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/character-sheets/{id}/step/{step}": {
+            "patch": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Atualizar uma etapa do wizard",
+                "description": "Update a single step of the wizard.",
+                "operationId": "77cdd84320f8189a859f457281625795",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da ficha",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "step",
+                        "in": "path",
+                        "description": "Nome da etapa",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "basics",
+                                "class",
+                                "abilities",
+                                "background",
+                                "combat",
+                                "equipment",
+                                "review"
+                            ]
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "state"
+                                ],
+                                "properties": {
+                                    "state": {
+                                        "description": "Dados da etapa",
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Etapa atualizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "description": "Ficha atualizada",
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Ficha não encontrada"
+                    },
+                    "422": {
+                        "description": "Ficha finalizada, etapa inválida ou erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/character-sheets/{id}/complete": {
+            "post": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Finalizar ficha de personagem",
+                "description": "Mark character sheet as completed.",
+                "operationId": "88e7756ef748812c556ad7650edba401",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da ficha",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ficha finalizada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "description": "Ficha com status completed",
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Ficha não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/character-sheets/import-pdf": {
+            "post": {
+                "tags": [
+                    "Character Sheets"
+                ],
+                "summary": "Importar ficha de personagem a partir de PDF",
+                "description": "Import character sheet from PDF upload. Returns parsed state (and optionally creates a new sheet).",
+                "operationId": "5a9986d5f0d6267d7fe8a0af855a9471",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "Arquivo PDF da ficha (máx. 5 MB)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "create": {
+                                        "description": "Se true (padrão), cria uma nova ficha com os dados extraídos",
+                                        "type": "boolean",
+                                        "default": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Apenas dados extraídos (create=false)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "parsed": {
+                                                    "description": "Estado extraído do PDF",
+                                                    "type": "object"
+                                                },
+                                                "unrecognized": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Ficha criada a partir do PDF (create=true)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "properties": {
+                                                "character_sheet": {
+                                                    "description": "Ficha criada",
+                                                    "type": "object"
+                                                },
+                                                "parsed": {
+                                                    "description": "Estado extraído",
+                                                    "type": "object"
+                                                },
+                                                "unrecognized": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "properties": {
+                                                "api_version": {
+                                                    "type": "string",
+                                                    "example": "1"
+                                                },
+                                                "request_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Arquivo inválido ou ausente"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/game-sessions": {
             "post": {
                 "tags": [
@@ -480,6 +1353,12 @@
                                             }
                                         },
                                         "type": "object"
+                                    },
+                                    "character_sheet_id": {
+                                        "description": "ID da ficha de personagem (opcional). Se informado, o estado inicial do jogador será baseado na ficha.",
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -1544,6 +2423,10 @@
         {
             "name": "Autenticação",
             "description": "Autenticação"
+        },
+        {
+            "name": "Character Sheets",
+            "description": "Character Sheets"
         },
         {
             "name": "Game Sessions",
