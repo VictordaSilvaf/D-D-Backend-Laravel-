@@ -277,8 +277,9 @@ class GameSessionController extends Controller
             ),
         ]
     )]
-    public function show(int $id): JsonResponse
+    public function show(GameSession $gameSession): JsonResponse
     {
+        dd($gameSession);
         $gameSession = GameSession::findOrFail($id);
         $this->authorize('view', $gameSession);
 

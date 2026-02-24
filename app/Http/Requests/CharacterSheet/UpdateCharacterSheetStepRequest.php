@@ -4,23 +4,21 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\CharacterSheet;
 
+use App\Domain\Character\CharacterSheetRules;
+use App\Domain\Character\CharacterSheetStep;
 use App\Http\Requests\ApiRequest;
 
-class UpdateCharacterSheetStepRequest extends ApiRequest
+final class UpdateCharacterSheetStepRequest extends ApiRequest
 {
-    /**
-     * @return array<string, array<int, string>>
-     */
     public function rules(): array
     {
-        return [
-            'state' => ['required', 'array'],
-        ];
+        $step = CharacterSheetStep::fromString(
+            $this->route('step')
+        );
+
+        return CharacterSheetRules::forStep($step);
     }
 
-    /**
-     * @return array<string, string>
-     */
     public function attributes(): array
     {
         return [

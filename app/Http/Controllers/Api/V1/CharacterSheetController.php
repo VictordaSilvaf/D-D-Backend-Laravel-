@@ -6,6 +6,10 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Application\Services\CharacterSheetPdfParser;
 use App\Application\Services\CharacterSheetService;
+use App\Domain\Character\AI\CharacterSheetAiSchema;
+use App\Domain\Character\CharacterSheetRules;
+use App\Domain\Character\CharacterSheetStep;
+use App\Domain\Character\Services\CharacterSheetAiMapper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\CharacterSheet\ImportCharacterSheetPdfRequest;
 use App\Http\Requests\CharacterSheet\StoreCharacterSheetRequest;
@@ -22,6 +26,7 @@ class CharacterSheetController extends Controller
     public function __construct(
         private readonly CharacterSheetService $characterSheetService,
         private readonly CharacterSheetPdfParser $pdfParser,
+        private readonly CharacterSheetAiMapper $characterSheetAiMapper,
     ) {}
 
     /**
@@ -219,8 +224,10 @@ class CharacterSheetController extends Controller
             new OA\Response(response: 404, description: 'Ficha não encontrada'),
         ]
     )]
-    public function show(CharacterSheet $characterSheet): JsonResponse
+    public function show(string $characterSheet): JsonResponse
     {
+        $characterSheet = CharacterSheet::findOrFail($characterSheet);
+
         $this->authorize('view', $characterSheet);
 
         return ApiResponse::success($characterSheet->toArray());
@@ -281,8 +288,10 @@ class CharacterSheetController extends Controller
             new OA\Response(response: 422, description: 'Ficha já finalizada ou erro de validação'),
         ]
     )]
-    public function update(UpdateCharacterSheetRequest $request, CharacterSheet $characterSheet): JsonResponse
+    public function update(UpdateCharacterSheetRequest $request, string $characterSheet): JsonResponse
     {
+        $characterSheet = CharacterSheet::findOrFail($characterSheet);
+
         $this->authorize('update', $characterSheet);
 
         if ($characterSheet->isCompleted()) {
@@ -350,22 +359,29 @@ class CharacterSheetController extends Controller
     )]
     public function updateStep(
         UpdateCharacterSheetStepRequest $request,
-        CharacterSheet $characterSheet,
+        string $characterSheet,
         string $step
     ): JsonResponse {
+
+        $characterSheet = CharacterSheet::findOrFail($characterSheet);
+
         $this->authorize('update', $characterSheet);
 
         if ($characterSheet->isCompleted()) {
-            return ApiResponse::error('Ficha já finalizada e não pode ser alterada.', null, 422);
+            return ApiResponse::error(
+                'Ficha já finalizada e não pode ser alterada.',
+                null,
+                422
+            );
         }
 
-        $validSteps = ['basics', 'class', 'abilities', 'background', 'combat', 'equipment', 'review'];
-        if (! in_array($step, $validSteps, true)) {
-            return ApiResponse::error('Etapa inválida.', ['step' => ['Etapa deve ser uma de: '.implode(', ', $validSteps)]], 422);
-        }
+        $stepEnum = CharacterSheetStep::fromString($step);
 
-        $validated = $request->validated();
-        $sheet = $this->characterSheetService->updateStep($characterSheet, $step, $validated['state']);
+        $sheet = $this->characterSheetService->updateStep(
+            $characterSheet,
+            $stepEnum,
+            $request->validated()
+        );
 
         return ApiResponse::success($sheet->toArray());
     }
@@ -404,8 +420,10 @@ class CharacterSheetController extends Controller
             new OA\Response(response: 404, description: 'Ficha não encontrada'),
         ]
     )]
-    public function complete(CharacterSheet $characterSheet): JsonResponse
+    public function complete(string $characterSheet): JsonResponse
     {
+        $characterSheet = CharacterSheet::findOrFail($characterSheet);
+
         $this->authorize('update', $characterSheet);
 
         $sheet = $this->characterSheetService->complete($characterSheet);
@@ -453,8 +471,10 @@ class CharacterSheetController extends Controller
             new OA\Response(response: 404, description: 'Ficha não encontrada'),
         ]
     )]
-    public function destroy(CharacterSheet $characterSheet): JsonResponse
+    public function destroy(string $characterSheet): JsonResponse
     {
+        $characterSheet = CharacterSheet::findOrFail($characterSheet);
+
         $this->authorize('delete', $characterSheet);
 
         $characterSheet->delete();
@@ -547,29 +567,39 @@ class CharacterSheetController extends Controller
             new OA\Response(response: 422, description: 'Arquivo inválido ou ausente'),
         ]
     )]
+
     public function importPdf(ImportCharacterSheetPdfRequest $request): JsonResponse
     {
         $file = $request->file('file');
+
         if ($file === null) {
             return ApiResponse::error('Arquivo não enviado.', null, 422);
         }
 
         $parsed = $this->pdfParser->parse($file->getRealPath());
 
-        $create = $request->boolean('create', true);
-        if ($create) {
-            $sheet = $this->characterSheetService->createFromImport($request->user()->id, $parsed['state']);
-
-            return ApiResponse::success([
-                'character_sheet' => $sheet->toArray(),
-                'parsed' => $parsed,
-                'unrecognized' => $parsed['unrecognized'] ?? [],
-            ], 201);
+        // Garantir que temos texto
+        $text = is_array($parsed) ? ($parsed['text'] ?? '') : $parsed;
+        if (empty($text)) {
+            return ApiResponse::error('PDF não contém texto válido.', null, 422);
         }
 
+        // Mapear texto para estrutura, preenchendo campos faltantes com defaults
+        $mapper = $this->characterSheetAiMapper;
+        $structuredState = $mapper->map($text);
+
+        // Merge com o schema padrão para preencher valores ausentes
+        $structuredState = array_replace_recursive((new CharacterSheetAiSchema())->state, $structuredState);
+
+        // Validação completa
+        validator(['state' => $structuredState], CharacterSheetRules::full())->validate();
+
+        // Criar ficha
+        $sheet = $this->characterSheetService->createFromImport($request->user()->id, $structuredState);
+
         return ApiResponse::success([
-            'parsed' => $parsed,
-            'unrecognized' => $parsed['unrecognized'] ?? [],
-        ], 200);
+            'character_sheet' => $sheet->toArray(),
+            'parsed_ai' => $structuredState,
+        ], 201);
     }
 }

@@ -24,71 +24,90 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        // Handle exceptions for API requests
+
         $exceptions->render(function (Throwable $e, Request $request) {
-            // Only apply custom error handling for API routes
+
             if (! $request->is('api/*')) {
                 return null;
             }
 
-            // Ensure request_id exists for API errors
-            if (! $request->attributes->has('request_id')) {
-                $requestId = (string) \Illuminate\Support\Str::uuid();
-                $request->attributes->set('request_id', $requestId);
-                \Illuminate\Support\Facades\Log::withContext([
-                    'request_id' => $requestId,
-                ]);
-            }
+            $requestId = $request->attributes->get('request_id')
+                ?? (string) \Illuminate\Support\Str::uuid();
 
-            // ValidationException - 422
+            $request->attributes->set('request_id', $requestId);
+
+            \Illuminate\Support\Facades\Log::withContext([
+                'request_id' => $requestId,
+            ]);
+
+            $isDebug = config('app.debug');
+
+            $buildResponse = function (
+                string $message,
+                int $status,
+                ?array $errors = null
+            ) use ($e, $isDebug, $requestId) {
+
+                $payload = [
+                    'message' => $message,
+                ];
+
+                if ($errors) {
+                    $payload['errors'] = $errors;
+                }
+
+                if ($isDebug) {
+                    $payload['debug'] = [
+                        'exception' => get_class($e),
+                        'file' => $e->getFile(),
+                        'line' => $e->getLine(),
+                        'trace' => collect($e->getTrace())->take(15),
+                    ];
+                }
+
+                $response = response()->json($payload, $status);
+                $response->header('X-Request-ID', $requestId);
+
+                return $response;
+            };
+
+            // 422
             if ($e instanceof ValidationException) {
-                $response = ApiResponse::error(
-                    message: 'Os dados fornecidos são inválidos.',
-                    errors: $e->errors(),
-                    status: 422
+                return $buildResponse(
+                    'Os dados fornecidos são inválidos.',
+                    422,
+                    $e->errors()
                 );
-                $response->header('X-Request-ID', $request->attributes->get('request_id'));
-
-                return $response;
             }
 
-            // AuthenticationException - 401
+            // 401
             if ($e instanceof AuthenticationException) {
-                $response = ApiResponse::error(
-                    message: 'Não autenticado.',
-                    status: 401
+                return $buildResponse(
+                    'Não autenticado.',
+                    401
                 );
-                $response->header('X-Request-ID', $request->attributes->get('request_id'));
-
-                return $response;
             }
 
-            // ModelNotFoundException or NotFoundHttpException - 404
-            if ($e instanceof ModelNotFoundException || $e instanceof NotFoundHttpException) {
-                $response = ApiResponse::error(
-                    message: 'Recurso não encontrado.',
-                    status: 404
+            // 404
+            if (
+                $e instanceof ModelNotFoundException ||
+                $e instanceof NotFoundHttpException
+            ) {
+                return $buildResponse(
+                    'Recurso não encontrado.',
+                    404
                 );
-                $response->header('X-Request-ID', $request->attributes->get('request_id'));
-
-                return $response;
             }
 
-            // Generic error - 500
-            $message = config('app.debug')
-                ? $e->getMessage()
-                : 'Erro interno do servidor.';
-
+            // 500 ou HTTP Exception
             $status = method_exists($e, 'getStatusCode')
                 ? $e->getStatusCode()
                 : 500;
 
-            $response = ApiResponse::error(
-                message: $message,
-                status: $status
-            );
-            $response->header('X-Request-ID', $request->attributes->get('request_id'));
+            $message = $isDebug
+                ? $e->getMessage()
+                : 'Erro interno do servidor.';
 
-            return $response;
+            return $buildResponse($message, $status);
         });
     })->create();

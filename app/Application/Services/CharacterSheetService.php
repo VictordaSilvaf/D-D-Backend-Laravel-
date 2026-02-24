@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Services;
 
+use App\Domain\Character\CharacterSheetStep;
 use App\Models\CharacterSheet;
 use Illuminate\Support\Collection;
 
@@ -40,10 +41,16 @@ final class CharacterSheetService
         return $sheet;
     }
 
-    public function updateStep(CharacterSheet $sheet, string $step, array $stepState): CharacterSheet
-    {
+    public function updateStep(
+        CharacterSheet $sheet,
+        CharacterSheetStep $step,
+        array $stepState
+    ): CharacterSheet {
+
         $current = $sheet->state ?? [];
-        $current[$step] = $stepState;
+
+        $current[$step->value] = $stepState[$step->value] ?? $stepState;
+
         $sheet->state = $current;
         $sheet->save();
 
